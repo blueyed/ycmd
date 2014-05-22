@@ -1,6 +1,8 @@
 ycmd: a code-completion & comprehension server
 ==============================================
 
+[![Build Status](https://travis-ci.org/Valloric/ycmd.png?branch=master)](https://travis-ci.org/Valloric/ycmd)
+
 ycmd is a server that provides APIs for code-completion and other
 code-comprehension use-cases like semantic GoTo commands (and others). For
 certain filetypes, ycmd can also provide diagnostic errors and warnings.
@@ -20,7 +22,8 @@ API notes
   header. The HMAC is computed from the shared secret passed to the server on
   startup and the request/response body. The digest algorithm is SHA-256. The
   server will also include the HMAC in its responses; you _must_ verify it
-  before using the response. See `example_client.py` to see how it's done.
+  before using the response. See `example_client.py` _[NOTE: Which I haven't yet
+  written]_ to see how it's done.
 
 Backwards compatibility
 -----------------------
