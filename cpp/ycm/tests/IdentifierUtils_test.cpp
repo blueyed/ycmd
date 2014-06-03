@@ -142,6 +142,46 @@ TEST( IdentifierUtilsTest, RemoveIdentifierFreeTextEscapedQuotesStartStrings ) {
 }
 
 
+TEST( IdentifierUtilsTest, RemoveIdentifierFreeTextNoMultilineString ) {
+  EXPECT_STREQ( RemoveIdentifierFreeText(
+                  "'\n"
+                  "let x = 'foo'\n"
+                  "let y = 'bar'"
+                ).c_str(),
+                "'\n"
+                "let x = \n"
+                "let y = ");
+
+  EXPECT_STREQ( RemoveIdentifierFreeText(
+                  "\"\n"
+                  "let x = \"foo\"\n"
+                  "let y = \"bar\""
+                ).c_str(),
+                "\"\n"
+                "let x = \n"
+                "let y = ");
+}
+
+
+TEST( IdentifierUtilsTest, RemoveIdentifierFreeTextPythonMultilineString ) {
+  EXPECT_STREQ( RemoveIdentifierFreeText(
+                  "\"\"\"\n"
+                  "foobar\n"
+                  "\"\"\"\n"
+                  "zoo"
+                ).c_str(),
+                "\nzoo");
+
+  EXPECT_STREQ( RemoveIdentifierFreeText(
+                  "'''\n"
+                  "foobar\n"
+                  "'''\n"
+                  "zoo"
+                ).c_str(),
+                "\nzoo");
+}
+
+
 TEST( IdentifierUtilsTest, ExtractIdentifiersFromTextWorks ) {
   EXPECT_THAT( ExtractIdentifiersFromText(
                  "foo $_bar \n&BazGoo\n FOO= !!! '-' - _ (x) one-two !moo [qqq]"

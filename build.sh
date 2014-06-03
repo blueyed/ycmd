@@ -56,16 +56,17 @@ function python_finder {
 }
 
 function num_cores {
-  if command_exists nproc; then
-   num_cpus=$(nproc)
+  if [[ -n ${YCM_CORES} ]]; then
+    # Useful while building on machines with lot of CPUs but small amount of
+    # memory/swap
+    num_cpus=${YCM_CORES};
+  elif command_exists nproc; then
+    num_cpus=$(nproc)
+  elif [[ `uname -s` == "Linux" ]]; then
+    num_cpus=$(grep -c ^processor /proc/cpuinfo)
   else
-    num_cpus=1
-    if [[ `uname -s` == "Linux" ]]; then
-      num_cpus=$(grep -c ^processor /proc/cpuinfo)
-    else
-      # Works on Mac and FreeBSD
-      num_cpus=$(sysctl -n hw.ncpu)
-    fi
+    # Works on Mac and FreeBSD
+    num_cpus=$(sysctl -n hw.ncpu)
   fi
   echo $num_cpus
 }

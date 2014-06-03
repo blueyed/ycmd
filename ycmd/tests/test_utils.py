@@ -28,13 +28,9 @@ def BuildRequest( **kwargs ):
   filetype = kwargs[ 'filetype' ] if 'filetype' in kwargs else 'foo'
 
   request = {
-    'query': '',
     'line_num': 1,
     'column_num': 1,
-    'start_column': 1,
-    'filetypes': [ filetype ],
     'filepath': filepath,
-    'line_value': contents,
     'file_data': {
       filepath: {
         'contents': contents,
@@ -47,12 +43,6 @@ def BuildRequest( **kwargs ):
     if key in [ 'contents', 'filetype', 'filepath' ]:
       continue
     request[ key ] = value
-
-    if key == 'line_num':
-      lines = contents.splitlines()
-      if len( lines ) > 1:
-        # NOTE: assumes 1-based line_num
-        request[ 'line_value' ] = lines[ value - 1 ]
 
   return request
 
@@ -82,12 +72,10 @@ def StopOmniSharpServer( app ):
                                command_arguments = ['StopServer'],
                                filetype = 'cs' ) )
 
+
 def WaitUntilOmniSharpServerReady( app ):
   while True:
-    result = app.post_json( '/run_completer_command',
-                            BuildRequest( completer_target = 'filetype_default',
-                                          command_arguments = ['ServerReady'],
-                                          filetype = 'cs' ) ).json
+    result = app.get( '/ready', { 'include_subservers': 1 } ).json
     if result:
       break
     time.sleep( 0.2 )

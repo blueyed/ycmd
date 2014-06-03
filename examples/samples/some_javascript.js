@@ -1,4 +1,4 @@
-// Copyright (C) 2013  Google Inc.
+// Copyright (C) 2014  Google Inc.
 //
 // This file is part of YouCompleteMe.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with YouCompleteMe.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace YouCompleteMe {
+(function() {
+  var x = 10;
+  var y = 15;
+  var foobar = x + y;
+  var foozoo = x + y;
+  // location after second 'o' is line 24, column 6
+  foo
+});
 
-int YcmCoreVersion() {
-  // We increment this every time when we want to force users to recompile
-  // ycm_core.
-  return 10;
-}
-
-}  // namespace YouCompleteMe
