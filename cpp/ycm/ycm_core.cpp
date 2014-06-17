@@ -100,6 +100,20 @@ BOOST_PYTHON_MODULE(ycm_core)
     .def( "CandidatesForLocationInFile",
           &ClangCompleter::CandidatesForLocationInFile );
 
+  enum_< CompletionKind >( "CompletionKind" )
+    .value( "STRUCT", STRUCT )
+    .value( "CLASS", CLASS )
+    .value( "ENUM", ENUM )
+    .value( "TYPE", TYPE )
+    .value( "MEMBER", MEMBER )
+    .value( "FUNCTION", FUNCTION )
+    .value( "VARIABLE", VARIABLE )
+    .value( "MACRO", MACRO )
+    .value( "PARAMETER", PARAMETER )
+    .value( "NAMESPACE", NAMESPACE )
+    .value( "UNKNOWN", UNKNOWN )
+    .export_values();
+
   class_< CompletionData >( "CompletionData" )
     .def( "TextToInsertInBuffer", &CompletionData::TextToInsertInBuffer )
     .def( "MainCompletionText", &CompletionData::MainCompletionText )
@@ -124,6 +138,12 @@ BOOST_PYTHON_MODULE(ycm_core)
 
   class_< std::vector< Range > >( "RangeVec" )
     .def( vector_indexing_suite< std::vector< Range > >() );
+
+  enum_< DiagnosticKind >( "DiagnosticKind" )
+    .value( "ERROR", ERROR )
+    .value( "WARNING", WARNING )
+    .value( "INFORMATION", INFORMATION )
+    .export_values();
 
   class_< Diagnostic >( "Diagnostic" )
     .def_readonly( "ranges_", &Diagnostic::ranges_ )
