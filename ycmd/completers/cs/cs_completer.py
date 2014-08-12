@@ -125,8 +125,17 @@ class CsharpCompleter( Completer ):
     return [ responses.BuildCompletionData(
                 completion[ 'CompletionText' ],
                 completion[ 'DisplayText' ],
-                completion[ 'Description' ] )
+                completion[ 'Description' ],
+                None,
+                None,
+                { "required_namespace_import" : completion[ 'RequiredNamespaceImport' ] } )
              for completion in self._GetCompletions( request_data ) ]
+
+
+  def FilterAndSortCandidates( self, candidates, query ):
+    result = super(CsharpCompleter, self).FilterAndSortCandidates( candidates, query )
+    result.sort( _CompleteSorterByImport );
+    return result
 
 
   def DefinedSubcommands( self ):
@@ -209,12 +218,12 @@ class CsharpCompleter( Completer ):
       raise ValueError( self.UserCommandsHelpMessage() )
 
 
-  def DebugInfo( self ):
+  def DebugInfo( self, request_data ):
     if self.ServerIsRunning():
-      return 'Server running at: {0}\nLogfiles:\n{1}\n{2}'.format(
+      return 'OmniSharp Server running at: {0}\nOmniSharp logfiles:\n{1}\n{2}'.format(
         self._ServerLocation(), self._filename_stdout, self._filename_stderr )
     else:
-      return 'Server is not running'
+      return 'OmniSharp Server is not running'
 
   def _StartServer( self, request_data ):
     """ Start the OmniSharp server """
@@ -267,6 +276,9 @@ class CsharpCompleter( Completer ):
     """ Stop the OmniSharp server """
     self._GetResponse( '/stopserver' )
     self._omnisharp_port = None
+    if ( not self.user_options[ 'server_keep_logfiles' ] ):
+      os.unlink( self._filename_stdout );
+      os.unlink( self._filename_stderr );
     self._logger.info( 'Stopping OmniSharp server' )
 
 
@@ -285,8 +297,9 @@ class CsharpCompleter( Completer ):
 
   def _GetCompletions( self, request_data ):
     """ Ask server for completions """
-    completions = self._GetResponse( '/autocomplete',
-                                     self._DefaultParameters( request_data ) )
+    parameters = self._DefaultParameters( request_data )
+    parameters[ 'WantImportableTypes' ] = True
+    completions = self._GetResponse( '/autocomplete', parameters )
     return completions if completions != None else []
 
 
@@ -373,6 +386,17 @@ class CsharpCompleter( Completer ):
     response = urllib2.urlopen( target, parameters )
     return json.loads( response.read() )
 
+
+
+def _CompleteSorterByImport( a, b ):
+  return cmp( _CompleteIsFromImport( a ), _CompleteIsFromImport( b ) )
+
+
+def _CompleteIsFromImport( candidate ):
+  try:
+    return candidate[ "extra_data" ][ "required_namespace_import" ] != None
+  except ( KeyError, TypeError ):
+    return False
 
 
 def DiagnosticsToDiagStructure( diagnostics ):
