@@ -35,7 +35,7 @@ function python_finder {
 
   # Prefer python2-config over python-config.
   hash python2-config 2>/dev/null && python_config=python2-config \
-    || python_config=python_config
+    || python_config=python-config
   python_prefix=$(${python_config} --prefix | sed 's/^[ \t]*//')
 
   if [ -f "${python_prefix}/Python" ]; then
