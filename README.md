@@ -14,8 +14,20 @@ The best way to learn how to interact with ycmd is by reading through (and
 running) the [`example_client.py`][example-client] file. See the [README for the
 examples][example-readme] folder for details on how to run the example client.
 
+Known ycmd clients:
+------------------
+
+- [YouCompleteMe][ycm]: Vim client, stable and exposes all ycmd features.
+- [emacs-ycmd][]: Emacs client, still a bit experimental.
+
+Feel free to send a pull request adding a link to your client here if you've
+built one.
+
 Building
 --------
+
+[Clients commonly build and set up ycmd for you; you are unlikely to need to
+build ycmd yourself unless you want to build a new client.]
 
 This is all for Ubuntu Linux. Details on getting ycmd running on other OS's can be
 found in [YCM's instructions][ycm-install] (ignore the Vim-specific parts).
@@ -120,6 +132,20 @@ completion (both of which are subsequence matches). A word-boundary character
 are all capital characters, characters preceded by an underscore and the first
 letter character in the completion string.
 
+### Auto-shutdown if no requests for a while
+
+If the server hasn't received any requests for a while (controlled by the
+`--idle_suicide_seconds` ycmd flag), it will shut itself down. This is useful
+for cases where the process that started ycmd dies without telling ycmd to die
+too or if ycmd hangs (this should be extremely rare).
+
+If you're implementing a client for ycmd, ensure that you have some sort of
+keep-alive background thread that periodically pings ycmd (just call the
+`/healthy` handler, although any handler will do).
+
+You can also turn this off by passing `--idle_suicide_seconds=0`, although that
+isn't recommended.
+
 User-level customization
 -----------------------
 
@@ -141,6 +167,7 @@ user has configured. There's also an extra file (`.ycm_extra_conf.py`) your user
 is supposed to provide to configure certain semantic completers. More
 information on it can also be found in the [corresponding section of YCM's _User
 Guide_][extra-conf-doc].
+
 
 Backwards compatibility
 -----------------------
@@ -206,3 +233,4 @@ This software is licensed under the [GPL v3 license][gpl].
 [mkstemp]: http://man7.org/linux/man-pages/man3/mkstemp.3.html
 [options]: https://github.com/Valloric/YouCompleteMe#options
 [extra-conf-doc]: https://github.com/Valloric/YouCompleteMe#c-family-semantic-completion-engine-usage
+[emacs-ycmd]: https://github.com/abingham/emacs-ycmd
