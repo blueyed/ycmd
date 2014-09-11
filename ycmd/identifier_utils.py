@@ -44,7 +44,8 @@ COMMENT_AND_STRING_REGEX = re.compile(
   #  3. the escaped double quote inside the string
   r'(?<!\\)"(?:\\\\|\\"|.)*?"', re.MULTILINE )
 
-DEFAULT_IDENTIFIER_REGEX = re.compile( r"[_a-zA-Z]\w*", re.UNICODE )
+# HACK: include dash, optional dollar sign at the beginning.
+DEFAULT_IDENTIFIER_REGEX = re.compile( r"\$?[_a-zA-Z][\w-]*", re.UNICODE )
 
 FILETYPE_TO_IDENTIFIER_REGEX = {
     # Spec: http://www.w3.org/TR/CSS2/syndata.html#characters
@@ -84,7 +85,9 @@ def IdentifierRegexForFiletype( filetype ):
 
 
 def RemoveIdentifierFreeText( text ):
-  return COMMENT_AND_STRING_REGEX.sub( '', text )
+  # HACK: collect identifiers from everywhere, including comments.
+  # return COMMENT_AND_STRING_REGEX.sub( '', text )
+  return text
 
 
 def ExtractIdentifiersFromText( text, filetype = None ):
