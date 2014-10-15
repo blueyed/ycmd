@@ -136,8 +136,6 @@ DEFAULT_FILETYPE_TRIGGERS = {
   'perl' : ['->'],
   'php' : ['->', '::'],
   'cs,java,javascript,d,python,perl6,scala,vb,elixir,go' : ['.'],
-  # No default semantic triggers with Vim: https://github.com/Valloric/ycmd/issues/34
-  # 'vim' : ['re![_a-zA-Z]+[_\w]*\.'],
   'ruby' : ['.', '::'],
   'lua' : ['.', ':'],
   'erlang' : [':'],
