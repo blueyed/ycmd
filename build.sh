@@ -96,14 +96,16 @@ function num_cores {
 
 
 function install {
-  build_dir=`mktemp -d -t ycm_build.XXXXXX`
+  # build_dir=`mktemp -d -t ycm_build.XXXXXX`
+  build_dir=${SCRIPT_DIR}/build
+  mkdir -p ${build_dir}
   pushd "${build_dir}"
 
   cmake -G "Unix Makefiles" $(python_finder) "$@" . "${SCRIPT_DIR}/cpp"
 
   make -j $(num_cores) ycm_support_libs
   popd
-  rm -rf "${build_dir}"
+  # rm -rf "${build_dir}"
 }
 
 function testrun {
