@@ -27,6 +27,22 @@ function homebrew_cmake_install {
   fi
 }
 
+function get_python_config() {
+  if command_exists python2-config; then
+    echo python2-config
+  else
+    echo python-config
+  fi
+}
+
+function get_python() {
+  if command_exists python2; then
+    echo python2
+  else
+    echo python
+  fi
+}
+
 function python_finder {
   # The CMake 'FindPythonLibs' Module does not work properly.
   # So we are forced to do its job for it.
@@ -34,17 +50,14 @@ function python_finder {
   python_include="-DPYTHON_INCLUDE_DIR="
 
   # Prefer python2-config over python-config.
-  hash python2-config 2>/dev/null && python_config=python2-config \
-    || python_config=python-config
-  python_prefix=$(${python_config} --prefix | sed 's/^[ \t]*//')
+  python_prefix=$($(get_python_config) --prefix | sed 's/^[ \t]*//')
 
   if [ -f "${python_prefix}/Python" ]; then
     python_library+="${python_prefix}/Python"
     python_include+="${python_prefix}/Headers"
   else
     # Prefer python2 over python.
-    hash python2 2>/dev/null && python=python2 || python=python
-    which_python=$(${python} -c 'import sys;print(sys.version)' | sed 's/^[ \t]*//')
+    which_python=$($(get_python) -c 'import sys;print(sys.version)' | sed 's/^[ \t]*//')
     which_python="python${which_python:0:3}"
     lib_python="${python_prefix}/lib/lib${which_python}"
 
@@ -119,8 +132,12 @@ function usage {
 function check_third_party_libs {
   libs_present=true
   for folder in "${SCRIPT_DIR}"/third_party/*; do
+    if ! [[ -d $folder ]]; then
+      continue
+    fi
     num_files_in_folder=$(find "${folder}" -maxdepth 1 -mindepth 1 | wc -l)
     if [[ $num_files_in_folder -eq 0 ]]; then
+      echo "Missing libs in: $folder"
       libs_present=false
     fi
   done
