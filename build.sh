@@ -46,7 +46,6 @@ function get_python() {
 function python_finder {
   # The CMake 'FindPythonLibs' Module does not work properly.
   # So we are forced to do its job for it.
-  python_library="-DPYTHON_LIBRARY="
   python_include="-DPYTHON_INCLUDE_DIR="
 
   # Prefer python2-config over python-config.
@@ -69,12 +68,15 @@ function python_finder {
     # This check is for for CYGWIN
     elif [ -f "${lib_python}.dll.a" ]; then
       python_library+="${lib_python}.dll.a"
-    else
+    elif [ -f "{$lib_python}.dylib" ]; then
       python_library+="${lib_python}.dylib"
     fi
     python_include+="${python_prefix}/include/${which_python}"
   fi
 
+  if [ -n $python_library ]; then
+    python_library="-DPYTHON_LIBRARY=$python_library"
+  fi
   echo "${python_library} ${python_include}"
 }
 
