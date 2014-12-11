@@ -144,6 +144,8 @@ def PathToPythonInterpreter():
   import vim  # NOQA
   user_path_to_python = vim.eval( 'g:ycm_path_to_python_interpreter' )
   if user_path_to_python:
+    if not os.path.exists(user_path_to_python):
+      raise RuntimeError( 'Configured python does not exists! (g:ycm_path_to_python_interpreter)' )
     return user_path_to_python
 
   # We check for 'python2' before 'python' because some OS's (I'm looking at you
