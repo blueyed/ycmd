@@ -67,13 +67,13 @@ def CustomPythonCmakeArgs():
   else:
     which_python = sh.python(
       '-c',
-      'import sys;i=sys.version_info;print "python%d.%d" % (i.major, i.minor)'
+      'import sys;i=sys.version_info;print "python%d.%d" % (i[0], i[1])'
       ).strip()
     lib_python = '{0}/lib/lib{1}'.format( python_prefix, which_python ).strip()
 
     if p.isfile( '{0}.a'.format( lib_python ) ):
       python_library = '{0}.a'.format( lib_python )
-    # This check is for for CYGWIN
+    # This check is for CYGWIN
     elif p.isfile( '{0}.dll.a'.format( lib_python ) ):
       python_library = '{0}.dll.a'.format( lib_python )
     else:
@@ -146,7 +146,8 @@ def BuildYcmdLibs( cmake_args ):
 
     build_target = ( 'ycm_support_libs' if 'YCM_TESTRUN' not in os.environ else
                      'ycm_core_tests' )
-    sh.make( '-j', NumCores(), build_target, _out = sys.stdout )
+    sh.make( '-j', NumCores(), build_target, _out = sys.stdout,
+             _err = sys.stderr )
 
     if 'YCM_TESTRUN' in os.environ:
       RunYcmdTests( build_dir )
@@ -165,7 +166,14 @@ def BuildOmniSharp():
   sh.Command( build_command )( _out = sys.stdout )
 
 
+def ApplyWorkarounds():
+  # Some OSs define a 'make' ENV VAR and this confuses sh when we try to do
+  # sh.make. See https://github.com/Valloric/YouCompleteMe/issues/1401
+  os.environ.pop('make', None)
+
+
 def Main():
+  ApplyWorkarounds()
   CheckDeps()
   args = ParseArguments()
   BuildYcmdLibs( GetCmakeArgs( args ) )

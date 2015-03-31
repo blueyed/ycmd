@@ -153,7 +153,7 @@ You can provide settings to ycmd on server startup. There's a
 [`default_settings.json`][def-settings] file that you can tweak. See the
 [_Options_ section in YCM's _User Guide_][options] for a description on what
 each option does. Pass the path to the modified settings file to ycmd as an
-`--options-file=/path/to/file` flag.  Note that you must set the `hmac_secret`
+`--options_file=/path/to/file` flag.  Note that you must set the `hmac_secret`
 setting (encode the value with [base64][]). Because the file you are passing
 contains a secret token, ensure that you are creating the temporary file in a
 secure way (the [`mkstemp()`][mkstemp] Linux system call is a good idea; use
@@ -225,7 +225,7 @@ This software is licensed under the [GPL v3 license][gpl].
 [exploit]: https://groups.google.com/d/topic/ycm-users/NZAPrvaYgxo/discussion
 [example-client]: https://github.com/Valloric/ycmd/blob/master/examples/example_client.py
 [example-readme]: https://github.com/Valloric/ycmd/blob/master/examples/README.md
-[trigger-defaults]: https://github.com/Valloric/ycmd/blob/master/ycmd/completers/completer_utils.py#L24
+[trigger-defaults]: https://github.com/Valloric/ycmd/blob/master/ycmd/completers/completer_utils.py#L143
 [subsequence]: http://en.wikipedia.org/wiki/Subsequence
 [ycm-install]: https://github.com/Valloric/YouCompleteMe/blob/master/README.md#mac-os-x-super-quick-installation
 [def-settings]: https://github.com/Valloric/ycmd/blob/master/ycmd/default_settings.json
@@ -234,3 +234,4 @@ This software is licensed under the [GPL v3 license][gpl].
 [options]: https://github.com/Valloric/YouCompleteMe#options
 [extra-conf-doc]: https://github.com/Valloric/YouCompleteMe#c-family-semantic-completion-engine-usage
 [emacs-ycmd]: https://github.com/abingham/emacs-ycmd
+[gpl]: http://www.gnu.org/copyleft/gpl.html
