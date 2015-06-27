@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with YouCompleteMe.  If not, see <http://www.gnu.org/licenses/>.
 
-from ycmd.completers.go.gocode_completer import GoCodeCompleter
+from ycmd.completers.typescript.typescript_completer import TypeScriptCompleter
 
 def GetCompleter( user_options ):
-  return GoCodeCompleter( user_options )
+  return TypeScriptCompleter( user_options )
