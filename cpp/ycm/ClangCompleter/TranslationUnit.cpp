@@ -214,7 +214,12 @@ Location TranslationUnit::GetDeclarationLocation(
   if ( !CursorIsValid( referenced_cursor ) )
     return Location();
 
-  return Location( clang_getCursorLocation( referenced_cursor ) );
+  CXCursor canonical_cursor = clang_getCanonicalCursor( referenced_cursor );
+
+  if ( !CursorIsValid( canonical_cursor ) )
+    return Location( clang_getCursorLocation( referenced_cursor ) );
+
+  return Location( clang_getCursorLocation( canonical_cursor ) );
 }
 
 Location TranslationUnit::GetDefinitionLocation(
@@ -291,10 +296,10 @@ std::string TranslationUnit::GetTypeAtLocation(
 
   CXType canonical_type = clang_getCanonicalType( type );
 
-  if ( !clang_equalTypes( type, canonical_type ) )
-  {
+  if ( !clang_equalTypes( type, canonical_type ) ) {
     type_description += " => ";
-    type_description += CXStringToString(clang_getTypeSpelling(canonical_type));
+    type_description += CXStringToString(
+                                  clang_getTypeSpelling( canonical_type ) );
   }
 
   return type_description;
@@ -368,7 +373,6 @@ void TranslationUnit::Reparse( std::vector< CXUnsavedFile > &unsaved_files,
   UpdateLatestDiagnostics();
 }
 
-
 void TranslationUnit::UpdateLatestDiagnostics() {
   unique_lock< mutex > lock1( clang_access_mutex_ );
   unique_lock< mutex > lock2( diagnostics_mutex_ );
@@ -387,6 +391,99 @@ void TranslationUnit::UpdateLatestDiagnostics() {
     if ( diagnostic.kind_ != INFORMATION )
       latest_diagnostics_.push_back( diagnostic );
   }
+}
+
+namespace {
+  /// Sort a FixIt container by its location's distance from a given column
+  /// (such as the cursor location).
+  ///
+  /// PreCondition: All FixIts in the container are on the same line.
+  struct sort_by_location {
+    sort_by_location( int column ) : column_( column ) { }
+
+    bool operator()( const FixIt& a, const FixIt& b ) {
+      int a_distance = a.location.column_number_ - column_;
+      int b_distance = b.location.column_number_ - column_;
+
+      return std::abs( a_distance ) < std::abs( b_distance );
+    }
+
+  private:
+    int column_;
+  };
+}
+
+std::vector< FixIt > TranslationUnit::GetFixItsForLocationInFile(
+  int line,
+  int column,
+  const std::vector< UnsavedFile > &unsaved_files,
+  bool reparse ) {
+
+  if ( reparse )
+    ReparseForIndexing( unsaved_files );
+
+  std::vector< FixIt > fixits;
+
+  {
+    unique_lock< mutex > lock( diagnostics_mutex_ );
+
+    for ( std::vector< Diagnostic >::const_iterator it
+                                        = latest_diagnostics_.begin();
+          it != latest_diagnostics_.end();
+          ++it) {
+
+      // Find all fixits for the supplied line
+      if ( it->fixits_.size() > 0 &&
+           it->location_.line_number_ == static_cast<uint>( line ) ) {
+        FixIt fixit;
+        fixit.chunks = it->fixits_;
+        fixit.location = it->location_;
+
+        fixits.push_back( fixit );
+      }
+    }
+  }
+
+  // Sort them by the distance to the supplied column
+  std::sort( fixits.begin(),
+             fixits.end(),
+             sort_by_location( column ) );
+
+  return fixits;
+}
+
+DocumentationData TranslationUnit::GetDocsForLocationInFile(
+  int line,
+  int column,
+  const std::vector< UnsavedFile > &unsaved_files,
+  bool reparse ) {
+
+  if ( reparse )
+    ReparseForIndexing( unsaved_files );
+
+  unique_lock< mutex > lock( clang_access_mutex_ );
+
+  if ( !clang_translation_unit_ )
+    return DocumentationData();
+
+  CXCursor cursor = GetCursor( line, column );
+
+  if ( !CursorIsValid( cursor ) )
+    return DocumentationData();
+
+  // If the original cursor is a reference, then we return the documentation
+  // for the type/method/etc. that is referenced
+  CXCursor referenced_cursor = clang_getCursorReferenced( cursor );
+  if ( CursorIsValid( referenced_cursor ) )
+    cursor = referenced_cursor;
+
+  // We always want the documentation associated with the canonical declaration
+  CXCursor canonical_cursor = clang_getCanonicalCursor( cursor );
+
+  if ( !CursorIsValid( canonical_cursor ) )
+    return DocumentationData();
+
+  return DocumentationData( canonical_cursor );
 }
 
 CXCursor TranslationUnit::GetCursor( int line, int column ) {

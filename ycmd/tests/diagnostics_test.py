@@ -19,16 +19,26 @@
 
 from ..server_utils import SetUpPythonPath
 SetUpPythonPath()
-from .test_utils import ( Setup, BuildRequest, PathToTestFile,
-                          StopOmniSharpServer, WaitUntilOmniSharpServerReady )
+from .test_utils import ( Setup,
+                          BuildRequest,
+                          PathToTestFile,
+                          StopOmniSharpServer,
+                          WaitUntilOmniSharpServerReady )
 from webtest import TestApp
 from nose.tools import with_setup, eq_
-from hamcrest import ( assert_that, contains, contains_string, has_entries,
-                       has_entry, empty, equal_to )
+from hamcrest import ( assert_that,
+                       contains,
+                       contains_string,
+                       has_entries,
+                       has_entry,
+                       has_items,
+                       empty,
+                       equal_to )
 from ..responses import NoDiagnosticSupport
 from .. import handlers
 import bottle
 import httplib
+from pprint import pprint
 
 bottle.debug( True )
 
@@ -137,13 +147,12 @@ struct Foo {
   response = app.post_json( '/event_notification', event_data ).json
   assert_that( response, empty() )
 
-
 @with_setup( Setup )
 def Diagnostics_CsCompleter_ZeroBasedLineAndColumn_test():
   app = TestApp( handlers.app )
   app.post_json( '/ignore_extra_conf_file',
                  { 'filepath': PathToTestFile( '.ycm_extra_conf.py' ) } )
-  filepath = PathToTestFile( 'testy/Program.cs' )
+  filepath = PathToTestFile( 'testy', 'Program.cs' )
   contents = open( filepath ).read()
   event_data = BuildRequest( filepath = filepath,
                              filetype = 'cs',
@@ -190,10 +199,10 @@ def Diagnostics_CsCompleter_MultipleSolution_test():
   app = TestApp( handlers.app )
   app.post_json( '/ignore_extra_conf_file',
                  { 'filepath': PathToTestFile( '.ycm_extra_conf.py' ) } )
-  filepaths = [ PathToTestFile( 'testy/Program.cs' ),
-                PathToTestFile( 'testy-multiple-solutions/'
-                                'solution-named-like-folder/'
-                                'testy/'
+  filepaths = [ PathToTestFile( 'testy', 'Program.cs' ),
+                PathToTestFile( 'testy-multiple-solutions',
+                                'solution-named-like-folder',
+                                'testy',
                                 'Program.cs' ) ]
   lines = [ 11, 10 ]
   for filepath, line in zip( filepaths, lines ):
@@ -267,11 +276,40 @@ struct Foo {
 
 
 @with_setup( Setup )
+def GetDetailedDiagnostic_ClangCompleter_Multiline_test():
+  app = TestApp( handlers.app )
+  contents = """
+struct Foo {
+  Foo(int z) {}
+};
+
+int main() {
+  Foo foo("goo");
+}
+"""
+
+  diag_data = BuildRequest( compilation_flags = ['-x', 'c++'],
+                            line_num = 7,
+                            contents = contents,
+                            filetype = 'cpp' )
+
+  event_data = diag_data.copy()
+  event_data.update( {
+    'event_name': 'FileReadyToParse',
+  } )
+
+  app.post_json( '/event_notification', event_data )
+  results = app.post_json( '/detailed_diagnostic', diag_data ).json
+  assert_that( results,
+               has_entry( 'message', contains_string( "\n" ) ) )
+
+
+@with_setup( Setup )
 def GetDetailedDiagnostic_CsCompleter_Works_test():
   app = TestApp( handlers.app )
   app.post_json( '/ignore_extra_conf_file',
                  { 'filepath': PathToTestFile( '.ycm_extra_conf.py' ) } )
-  filepath = PathToTestFile( 'testy/Program.cs' )
+  filepath = PathToTestFile( 'testy', 'Program.cs' )
   contents = open( filepath ).read()
   event_data = BuildRequest( filepath = filepath,
                              filetype = 'cs',
@@ -313,3 +351,36 @@ def GetDetailedDiagnostic_JediCompleter_DoesntWork_test():
                has_entry( 'exception',
                           has_entry( 'TYPE', NoDiagnosticSupport.__name__ ) ) )
 
+
+
+@with_setup( Setup )
+def Diagnostics_ClangCompleter_FixIt_Available_test():
+  app = TestApp( handlers.app )
+  contents = open( PathToTestFile( 'FixIt_Clang_cpp11.cpp' ) ).read()
+
+  event_data = BuildRequest( contents = contents,
+                             event_name = 'FileReadyToParse',
+                             filetype = 'cpp',
+                             compilation_flags = [ '-x', 'c++',
+                                                   '-std=c++03',
+                                                   '-Wall',
+                                                   '-Wextra',
+                                                   '-pedantic' ] )
+
+  response = app.post_json( '/event_notification', event_data ).json
+
+  pprint( response )
+
+  assert_that( response, has_items (
+    has_entries( {
+      'location' : has_entries( { 'line_num': 16, 'column_num': 3 } ),
+      'text': equal_to( 'switch condition type \'A\' '
+                        'requires explicit conversion to \'int\''),
+      'fixit_available' : True
+    } ),
+    has_entries( {
+      'location' : has_entries( { 'line_num': 11, 'column_num': 3 } ),
+      'text': equal_to('explicit conversion functions are a C++11 extension'),
+      'fixit_available' : False
+    } ),
+  ) )
